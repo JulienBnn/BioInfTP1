@@ -17,7 +17,7 @@ import argparse
 import os
 import sys
 import networkx as nx
-import matplotlib
+import matplotlib.pyplot as plt
 from operator import itemgetter
 import random
 random.seed(9001)
@@ -80,15 +80,24 @@ def cut_kmer(read, kmer_size):
 def build_kmer_dict(fastq_file, kmer_size):
     read = read_fastq(fastq_file)
     read1 = next(read)
+    read2 = next(read)
     kmer_list = []
     for k in cut_kmer(read1, kmer_size):
         kmer_list.append(k)
     kmer_dict = dict((x,kmer_list.count(x)) for x in set(kmer_list))
-    print(kmer_dict)
+    return kmer_dict
 
-def build_graph(kmer_dict):
-    pass
-
+def build_graph(kmer_dict, display = False):
+    G = nx.DiGraph()
+    for k in kmer_dict:
+        G.add_edge(k[:-1], k[1:], weight = kmer_dict[k])
+    edge_labels=dict([((u,v,),d['weight']) for u,v,d in G.edges(data=True)])
+    pos=nx.spring_layout(G)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+    nx.draw(G, pos ,with_labels=True, font_weight='bold')
+    if display:
+        plt.show()
+    return G
 
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
     pass
@@ -147,7 +156,8 @@ def main():
     read1 = next(read)
     read2 = next(read)
 
-    build_kmer_dict(args.fastq_file, args.kmer_size)
+    kmer_dict = build_kmer_dict(args.fastq_file, args.kmer_size)
+    graph = build_graph(kmer_dict, display = True)
 
 if __name__ == '__main__':
     main()
